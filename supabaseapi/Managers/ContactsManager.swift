@@ -3,11 +3,13 @@
 import Foundation
 import Supabase
 import Combine
+import Contacts
 
 @MainActor
 final class ContactsManager: ObservableObject {
     @Published var isLoading = false
     private let client = SupabaseService().client
+    private let contactStore = CNContactStore()
 
     // Shape this to your "contacts" table. Keep it minimal for now.
     struct ContactData: Codable, Identifiable {
@@ -18,37 +20,62 @@ final class ContactsManager: ObservableObject {
         let email: String?
         let created_at: String?
     }
+    
+    func requestContactsPermission() async -> Bool {
+        switch CNContactStore.authorizationStatus(for: .contacts) {
+        case .authorized:
+            return true
+        case .notDetermined:
+            return await withCheckedContinuation { continuation in
+                contactStore.requestAccess(for: .contacts) { granted, _ in
+                    continuation.resume(returning: granted)
+                }
+            }
+        default:
+            return false
+        }
+    }
 
-    /// TEMP: no device sync yet. Just a stub so your UI compiles and runs.
-    /// If you want, this can insert a dummy contact row so you see a count > 0.
+    /// Sync real contacts from device to Supabase
     func syncContactsToSupabase(userId: UUID) async -> Result<Int, Error> {
         isLoading = true; defer { isLoading = false }
+        
+        // Request contacts permission first
+        guard await requestContactsPermission() else {
+            return .failure(NSError(domain: "ContactsManager", code: 403, userInfo: [NSLocalizedDescriptionKey: "Contacts permission denied"]))
+        }
+        
         do {
-            // Comment this block out if you DON’T want a dummy insert.
-            struct NewRow: Codable {
-                let id: UUID
-                let user_id: UUID
-                let contact_name: String?
-                let phone: String?
-                let email: String?
+            // Fetch contacts from device
+            let keys = [CNContactGivenNameKey, CNContactFamilyNameKey, CNContactPhoneNumbersKey, CNContactEmailAddressesKey]
+            let request = CNContactFetchRequest(keysToFetch: keys as [CNKeyDescriptor])
+            
+            var deviceContacts: [CNContact] = []
+            try contactStore.enumerateContacts(with: request) { contact, _ in
+                deviceContacts.append(contact)
             }
-            let dummy = NewRow(
-                id: UUID(),
-                user_id: userId,
-                contact_name: "Demo Contact",
-                phone: nil,
-                email: nil
-            )
-            _ = try await client.from("contacts").insert(dummy).execute()
-
-            // Return new count so your UI shows something.
-            let rows: [ContactData] = try await client
-                .from("contacts")
-                .select()
-                .eq("user_id", value: userId.uuidString)
-                .execute()
-                .value
-            return .success(rows.count)
+            
+            // Convert to our ContactData format and insert into database
+            var insertedCount = 0
+            for contact in deviceContacts.prefix(10) { // Limit to first 10 contacts for demo
+                let fullName = "\(contact.givenName) \(contact.familyName)".trimmingCharacters(in: .whitespaces)
+                let phoneNumber = contact.phoneNumbers.first?.value.stringValue
+                let emailAddress = contact.emailAddresses.first?.value as String?
+                
+                let contactData = ContactData(
+                    id: UUID(),
+                    user_id: userId,
+                    contact_name: fullName.isEmpty ? nil : fullName,
+                    phone: phoneNumber,
+                    email: emailAddress,
+                    created_at: ISO8601DateFormatter().string(from: Date())
+                )
+                
+                _ = try await client.from("contacts").insert(contactData).execute()
+                insertedCount += 1
+            }
+            
+            return .success(insertedCount)
         } catch {
             return .failure(error)
         }

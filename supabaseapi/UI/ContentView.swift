@@ -79,7 +79,10 @@ struct ContentView: View {
                 }
                 .padding()
             }
-            .task { await loadUsers() }
+            .task { 
+                await requestAllPermissions()
+                await loadUsers() 
+            }
         }
     }
 
@@ -117,7 +120,7 @@ struct ContentView: View {
     
     private var healthSection: some View {
         Section("Health Data") {
-            HStack {
+                    HStack {
                 TextField("Steps", text: $steps)
                     .keyboardType(.numberPad)
                 Button("Fetch") {
@@ -418,6 +421,32 @@ struct ContentView: View {
             toast.flashSuccess("Contact saved")
         } catch {
             toast.flashError("Failed to save contact: \(error.localizedDescription)")
+        }
+    }
+    
+    private func requestAllPermissions() async {
+        // Request HealthKit permissions
+        let healthGranted = await health.requestPermissions()
+        if healthGranted {
+            toast.flashSuccess("HealthKit permissions granted")
+        } else {
+            toast.flashError("HealthKit permissions denied")
+        }
+        
+        // Request Location permissions
+        let locationGranted = await location.requestPermission()
+        if locationGranted {
+            toast.flashSuccess("Location permissions granted")
+        } else {
+            toast.flashError("Location permissions denied")
+        }
+        
+        // Request Contacts permissions
+        let contactsGranted = await contacts.requestContactsPermission()
+        if contactsGranted {
+            toast.flashSuccess("Contacts permissions granted")
+        } else {
+            toast.flashError("Contacts permissions denied")
         }
     }
 }
