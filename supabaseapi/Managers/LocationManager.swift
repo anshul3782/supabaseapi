@@ -25,6 +25,8 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     override init() {
         super.init()
         manager.delegate = self
+        manager.desiredAccuracy = kCLLocationAccuracyBest
+        manager.distanceFilter = 10 // Update every 10 meters
     }
 
     func requestPermission() async -> Bool {
@@ -54,11 +56,30 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     }
 
     func fetchCity() async -> String? {
-        guard let loc = manager.location else { return nil }
+        // Start location updates if not already started
+        if manager.location == nil {
+            manager.startUpdatingLocation()
+            
+            // Wait for location update
+            try? await Task.sleep(nanoseconds: 3_000_000_000) // Wait 3 seconds for location
+        }
+        
+        guard let loc = manager.location else { 
+            print("Location: No location available")
+            return nil 
+        }
+        
+        print("Location: Got location: \(loc.coordinate.latitude), \(loc.coordinate.longitude)")
+        
         do {
             let p = try await geocoder.reverseGeocodeLocation(loc)
-            return p.first?.locality
-        } catch { return nil }
+            let city = p.first?.locality ?? "Unknown City"
+            print("Location: Resolved city: \(city)")
+            return city
+        } catch { 
+            print("Location: Reverse geocoding failed: \(error)")
+            return nil 
+        }
     }
 
     func insertLocation(userId: UUID, city: String) async throws {

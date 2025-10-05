@@ -291,9 +291,9 @@ struct ContentView: View {
         switch contactsResult {
         case .success(let contactsData):
             if let contact = contactsData.first {
-                contactName = contact.contact_name ?? ""
-                contactPhone = contact.phone ?? ""
-                contactEmail = contact.email ?? ""
+                contactName = contact.name
+                contactPhone = contact.phone
+                contactEmail = "" // No email field in database
             } else {
                 clearContactsForm()
             }
@@ -411,9 +411,8 @@ struct ContentView: View {
             let contact = ContactsManager.ContactData(
                 id: UUID(),
                 user_id: userId,
-                contact_name: contactName,
-                phone: contactPhone.isEmpty ? nil : contactPhone,
-                email: contactEmail.isEmpty ? nil : contactEmail,
+                name: contactName,
+                phone: contactPhone,
                 created_at: ISO8601DateFormatter().string(from: Date())
             )
             

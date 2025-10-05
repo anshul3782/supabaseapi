@@ -11,13 +11,12 @@ final class ContactsManager: ObservableObject {
     private let client = SupabaseService().client
     private let contactStore = CNContactStore()
 
-    // Shape this to your "contacts" table. Keep it minimal for now.
+    // Matches your actual database schema - minimal for bulk imports
     struct ContactData: Codable, Identifiable {
-        let id: UUID                 // primary key (uuid) in your table
+        let id: UUID
         let user_id: UUID
-        let contact_name: String?
-        let phone: String?
-        let email: String?
+        let name: String        // Changed from contact_name to match DB
+        let phone: String
         let created_at: String?
     }
     
@@ -46,7 +45,7 @@ final class ContactsManager: ObservableObject {
         }
     }
 
-    /// Sync real contacts from device to Supabase
+    /// Sync ALL contacts from device to Supabase (bulk import)
     func syncContactsToSupabase(userId: UUID) async -> Result<Int, Error> {
         isLoading = true; defer { isLoading = false }
         
@@ -56,8 +55,8 @@ final class ContactsManager: ObservableObject {
         }
         
         do {
-            // Fetch contacts from device
-            let keys = [CNContactGivenNameKey, CNContactFamilyNameKey, CNContactPhoneNumbersKey, CNContactEmailAddressesKey]
+            // Fetch ALL contacts from device (no limit for bulk import)
+            let keys = [CNContactGivenNameKey, CNContactFamilyNameKey, CNContactPhoneNumbersKey]
             let request = CNContactFetchRequest(keysToFetch: keys as [CNKeyDescriptor])
             
             var deviceContacts: [CNContact] = []
@@ -65,28 +64,40 @@ final class ContactsManager: ObservableObject {
                 deviceContacts.append(contact)
             }
             
+            print("Contacts: Found \(deviceContacts.count) contacts on device")
+            
             // Convert to our ContactData format and insert into database
             var insertedCount = 0
-            for contact in deviceContacts.prefix(10) { // Limit to first 10 contacts for demo
+            for contact in deviceContacts {
                 let fullName = "\(contact.givenName) \(contact.familyName)".trimmingCharacters(in: .whitespaces)
                 let phoneNumber = contact.phoneNumbers.first?.value.stringValue
-                let emailAddress = contact.emailAddresses.first?.value as String?
+                
+                // Skip contacts without name or phone
+                guard !fullName.isEmpty, let phone = phoneNumber, !phone.isEmpty else {
+                    continue
+                }
                 
                 let contactData = ContactData(
                     id: UUID(),
                     user_id: userId,
-                    contact_name: fullName.isEmpty ? nil : fullName,
-                    phone: phoneNumber,
-                    email: emailAddress,
+                    name: fullName,
+                    phone: phone,
                     created_at: ISO8601DateFormatter().string(from: Date())
                 )
                 
                 _ = try await client.from("contacts").insert(contactData).execute()
                 insertedCount += 1
+                
+                // Log progress every 50 contacts
+                if insertedCount % 50 == 0 {
+                    print("Contacts: Inserted \(insertedCount) contacts...")
+                }
             }
             
+            print("Contacts: Successfully synced \(insertedCount) contacts to database")
             return .success(insertedCount)
         } catch {
+            print("Contacts: Sync failed with error: \(error)")
             return .failure(error)
         }
     }
