@@ -284,8 +284,9 @@ struct ContentView: View {
         }
         
         // Load contacts data (get latest contact)
-        do {
-            let contactsData = try await contacts.fetchContactsFromSupabase(userId: userId)
+        let contactsResult = await contacts.fetchContactsFromSupabase(userId: userId)
+        switch contactsResult {
+        case .success(let contactsData):
             if let contact = contactsData.first {
                 contactName = contact.contact_name ?? ""
                 contactPhone = contact.phone ?? ""
@@ -293,7 +294,7 @@ struct ContentView: View {
             } else {
                 clearContactsForm()
             }
-        } catch {
+        case .failure:
             clearContactsForm()
         }
     }
