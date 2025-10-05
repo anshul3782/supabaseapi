@@ -39,50 +39,65 @@ struct ContentView: View {
     @State private var showingAddUser = false
 
     var body: some View {
-        NavigationView {
-            Form {
-                usersSection
-                if selectedUserId != nil {
-                    healthSection
-                    locationSection
-                    contactsSection
-                }
-            }
-            .navigationTitle("User Data Manager")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("+") { showingAddUser = true }
-                }
-            }
-            .alert("Add New User", isPresented: $showingAddUser) {
-                TextField("Username", text: $newUsername)
-                TextField("Display Name (optional)", text: $newDisplayName)
-                Button("Cancel", role: .cancel) { clearAddUserForm() }
-                Button("Add") { Task { await addUser() } }
-            }
-            .overlay(alignment: .bottom) {
-                VStack(spacing: 8) {
-                    if !toast.successMessage.isEmpty {
-                        Text(toast.successMessage)
-                            .padding()
-                            .background(.green.opacity(0.9))
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
-                    }
-                    if !toast.errorMessage.isEmpty {
-                        Text(toast.errorMessage)
-                            .padding()
-                            .background(.red.opacity(0.9))
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
+        TabView {
+            // Original User Data Manager
+            NavigationView {
+                Form {
+                    usersSection
+                    if selectedUserId != nil {
+                        healthSection
+                        locationSection
+                        contactsSection
                     }
                 }
-                .padding()
+                .navigationTitle("User Data Manager")
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("+") { showingAddUser = true }
+                    }
+                }
+                .alert("Add New User", isPresented: $showingAddUser) {
+                    TextField("Username", text: $newUsername)
+                    TextField("Display Name (optional)", text: $newDisplayName)
+                    Button("Cancel", role: .cancel) { clearAddUserForm() }
+                    Button("Add") { Task { await addUser() } }
+                }
+                .overlay(alignment: .bottom) {
+                    VStack(spacing: 8) {
+                        if !toast.successMessage.isEmpty {
+                            Text(toast.successMessage)
+                                .padding()
+                                .background(.green.opacity(0.9))
+                                .foregroundColor(.white)
+                                .cornerRadius(8)
+                        }
+                        if !toast.errorMessage.isEmpty {
+                            Text(toast.errorMessage)
+                                .padding()
+                                .background(.red.opacity(0.9))
+                                .foregroundColor(.white)
+                                .cornerRadius(8)
+                        }
+                    }
+                    .padding()
+                }
+                .task { 
+                    await requestAllPermissions()
+                    await loadUsers() 
+                }
             }
-            .task { 
-                await requestAllPermissions()
-                await loadUsers() 
+            .tabItem {
+                Image(systemName: "person.circle")
+                Text("Users")
             }
+            
+            // Banana Checkin UI (6th tab)
+            BananaCheckinHomeView()
+                .environmentObject(health)
+                .tabItem {
+                    Image(systemName: "heart.fill")
+                    Text("Checkin")
+                }
         }
     }
 
