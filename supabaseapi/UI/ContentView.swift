@@ -13,6 +13,7 @@ struct ContentView: View {
     @StateObject private var location = LocationManager()
     @StateObject private var contacts = ContactsManager()
     @StateObject private var toast = ToastCenter()
+    @StateObject private var supabaseManager = SupabaseManager.shared
     
     @State private var users: [User] = []
     @State private var selectedUserId: UUID?
@@ -40,9 +41,49 @@ struct ContentView: View {
 
     var body: some View {
         TabView {
-            // Original User Data Manager
-            NavigationView {
-                Form {
+            // Tab 1: Home (from banana_checkin)
+            HomeView()
+                .environmentObject(health)
+                .tabItem {
+                    Image(systemName: "house")
+                    Text("Home")
+                }
+
+            // Tab 2: Map (from banana_checkin)
+            MapView()
+                .environmentObject(location)
+                .tabItem {
+                    Image(systemName: "map")
+                    Text("Map")
+                }
+
+            // Tab 3: Contacts (from banana_checkin)
+            ContactsView()
+                .environmentObject(contacts)
+                .environmentObject(health)
+                .tabItem {
+                    Image(systemName: "person.2")
+                    Text("Contacts")
+                }
+
+            // Tab 4: Public (from banana_checkin)
+            PublicView()
+                .tabItem {
+                    Image(systemName: "globe")
+                    Text("Public")
+                }
+
+            // Tab 5: Settings (from banana_checkin)
+            SettingsView()
+                .environmentObject(supabaseManager)
+                .tabItem {
+                    Image(systemName: "gearshape")
+                    Text("Settings")
+                }
+
+            // Tab 6: User Data Manager (original)
+        NavigationView {
+            Form {
                     usersSection
                     if selectedUserId != nil {
                         healthSection
@@ -81,23 +122,15 @@ struct ContentView: View {
                     }
                     .padding()
                 }
-                .task { 
+                .task {
                     await requestAllPermissions()
-                    await loadUsers() 
+                    await loadUsers()
                 }
             }
             .tabItem {
                 Image(systemName: "person.circle")
                 Text("Users")
             }
-            
-            // Banana Checkin UI (6th tab)
-            BananaCheckinHomeView()
-                .environmentObject(health)
-                .tabItem {
-                    Image(systemName: "heart.fill")
-                    Text("Checkin")
-                }
         }
     }
 
