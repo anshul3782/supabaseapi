@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Display name and bundle name are optional here; Xcode fills from Build Settings -->
+    <key>CFBundleDisplayName</key>
+    <string>supabaseapi</string>
+
+    <!-- PRIVACY STRINGS (required for prompts to show) -->
+    <key>NSHealthShareUsageDescription</key>
+    <string>We read your Health data (steps, heart rate, sleep) to show your stats.</string>
+    <key>NSHealthUpdateUsageDescription</key>
+    <string>We may write Health data you choose to log.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>We use your location to show your current city.</string>
+    <key>NSContactsUsageDescription</key>
+    <string>We sync your contacts to your account.</string>
+</dict>
+</plist>
