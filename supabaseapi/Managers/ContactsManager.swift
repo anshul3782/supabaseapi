@@ -22,16 +22,26 @@ final class ContactsManager: ObservableObject {
     }
     
     func requestContactsPermission() async -> Bool {
-        switch CNContactStore.authorizationStatus(for: .contacts) {
+        let status = CNContactStore.authorizationStatus(for: .contacts)
+        print("Contacts: Current authorization status: \(status.rawValue)")
+        
+        switch status {
         case .authorized:
+            print("Contacts: Already authorized")
             return true
         case .notDetermined:
+            print("Contacts: Requesting access")
             return await withCheckedContinuation { continuation in
-                contactStore.requestAccess(for: .contacts) { granted, _ in
+                contactStore.requestAccess(for: .contacts) { granted, error in
+                    if let error = error {
+                        print("Contacts: Request failed with error: \(error)")
+                    }
+                    print("Contacts: Request result: \(granted)")
                     continuation.resume(returning: granted)
                 }
             }
         default:
+            print("Contacts: Authorization denied or restricted")
             return false
         }
     }

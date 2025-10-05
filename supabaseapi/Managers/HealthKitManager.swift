@@ -34,10 +34,22 @@ final class HealthKitManager: NSObject, ObservableObject {
     }
 
     func requestPermissions() async -> Bool {
+        print("HealthKit: Requesting authorization for types: \(readTypes)")
+        
+        // Check if HealthKit is available
+        guard HKHealthStore.isHealthDataAvailable() else {
+            print("HealthKit: Health data not available on this device")
+            return false
+        }
+        
         do {
             try await healthStore.requestAuthorization(toShare: [], read: readTypes)
+            print("HealthKit: Authorization request completed")
             return true
-        } catch { return false }
+        } catch {
+            print("HealthKit: Authorization request failed with error: \(error)")
+            return false
+        }
     }
 
     func fetchTodaysHealthData(for userId: UUID) async -> HealthData? {

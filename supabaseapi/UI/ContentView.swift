@@ -425,16 +425,23 @@ struct ContentView: View {
     }
     
     private func requestAllPermissions() async {
+        // Add a small delay to ensure app is fully loaded
+        try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+        
         // Request HealthKit permissions
+        print("Requesting HealthKit permissions...")
         let healthGranted = await health.requestPermissions()
+        print("HealthKit permission result: \(healthGranted)")
         if healthGranted {
             toast.flashSuccess("HealthKit permissions granted")
         } else {
-            toast.flashError("HealthKit permissions denied")
+            toast.flashError("HealthKit permissions denied - check entitlements")
         }
         
         // Request Location permissions
+        print("Requesting Location permissions...")
         let locationGranted = await location.requestPermission()
+        print("Location permission result: \(locationGranted)")
         if locationGranted {
             toast.flashSuccess("Location permissions granted")
         } else {
@@ -442,7 +449,9 @@ struct ContentView: View {
         }
         
         // Request Contacts permissions
+        print("Requesting Contacts permissions...")
         let contactsGranted = await contacts.requestContactsPermission()
+        print("Contacts permission result: \(contactsGranted)")
         if contactsGranted {
             toast.flashSuccess("Contacts permissions granted")
         } else {

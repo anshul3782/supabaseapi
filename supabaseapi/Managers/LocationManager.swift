@@ -28,12 +28,20 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     }
 
     func requestPermission() async -> Bool {
-        await withCheckedContinuation { cont in
+        print("Location: Current authorization status: \(manager.authorizationStatus.rawValue)")
+        
+        return await withCheckedContinuation { cont in
             permCont = cont
             switch manager.authorizationStatus {
-            case .notDetermined: manager.requestWhenInUseAuthorization()
-            case .authorizedAlways, .authorizedWhenInUse: cont.resume(returning: true)
-            default: cont.resume(returning: false)
+            case .notDetermined: 
+                print("Location: Requesting when-in-use authorization")
+                manager.requestWhenInUseAuthorization()
+            case .authorizedAlways, .authorizedWhenInUse: 
+                print("Location: Already authorized")
+                cont.resume(returning: true)
+            default: 
+                print("Location: Authorization denied or restricted")
+                cont.resume(returning: false)
             }
         }
     }
