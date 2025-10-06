@@ -15,6 +15,8 @@ struct ContentView: View {
     @StateObject private var toast = ToastCenter()
     @StateObject private var supabaseManager = SupabaseManager.shared
     
+    @State private var isAuthenticated = false
+    
     @State private var users: [User] = []
     @State private var selectedUserId: UUID?
     @State private var isLoading = false
@@ -40,13 +42,13 @@ struct ContentView: View {
     @State private var showingAddUser = false
 
     var body: some View {
-        TabView {
+        if isAuthenticated {
+            TabView {
             // Tab 1: Home (from banana_checkin)
             HomeView()
                 .environmentObject(health)
                 .tabItem {
                     Image(systemName: "house")
-                    Text("Home")
                 }
 
             // Tab 2: Map (from banana_checkin)
@@ -54,7 +56,6 @@ struct ContentView: View {
                 .environmentObject(location)
                 .tabItem {
                     Image(systemName: "map")
-                    Text("Map")
                 }
 
             // Tab 3: Contacts (from banana_checkin)
@@ -63,14 +64,12 @@ struct ContentView: View {
                 .environmentObject(health)
                 .tabItem {
                     Image(systemName: "person.2")
-                    Text("Contacts")
                 }
 
             // Tab 4: Public (from banana_checkin)
             PublicView()
                 .tabItem {
                     Image(systemName: "globe")
-                    Text("Public")
                 }
 
             // Tab 5: Settings (from banana_checkin)
@@ -78,7 +77,6 @@ struct ContentView: View {
                 .environmentObject(supabaseManager)
                 .tabItem {
                     Image(systemName: "gearshape")
-                    Text("Settings")
                 }
 
             // Tab 6: User Data Manager (original)
@@ -129,8 +127,10 @@ struct ContentView: View {
             }
             .tabItem {
                 Image(systemName: "person.circle")
-                Text("Users")
             }
+        }
+        } else {
+            LoginView(isAuthenticated: $isAuthenticated)
         }
     }
 

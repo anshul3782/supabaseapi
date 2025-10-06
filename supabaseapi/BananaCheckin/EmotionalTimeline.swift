@@ -6,7 +6,7 @@
 import SwiftUI
 
 struct EmotionalTimeline: View {
-    let emotions = ["😢", "😠", "🥶", "😭", "😳", "😱", "😬"]
+    let emotions = ["sad", "angry", "cold-face", "crying", "flushed", "gasp", "grimacing"]
     let times = ["08", "11", "14", "17", "20", "23", "02", "05"]
     @State private var showInsights = false
     @State private var isVisible = false
@@ -34,8 +34,7 @@ struct EmotionalTimeline: View {
                                 Button(action: {
                                     showInsights = true
                                 }) {
-                                    Text(emotion)
-                                        .font(.system(size: 32))
+                                    StaticEmojiView(emojiName: emotion, size: 24)
                                         .frame(width: 50, height: 50)
                                         .background(
                                             Circle()

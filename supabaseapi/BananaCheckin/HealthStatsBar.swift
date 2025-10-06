@@ -64,20 +64,14 @@ struct StatCapsule: View {
     let color: Color
 
     var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(color)
-            Text(value)
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.primary)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(
-            Capsule()
-                .fill(color.opacity(0.15))
-        )
+        Image(systemName: icon)
+            .font(.system(size: 20, weight: .semibold))
+            .foregroundColor(color)
+            .frame(width: 40, height: 40)
+            .background(
+                Circle()
+                    .fill(color.opacity(0.15))
+            )
     }
 }
 
